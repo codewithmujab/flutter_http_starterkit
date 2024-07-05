@@ -1,0 +1,72 @@
+
+  Future<void> _login() async {
+    final String email = _emailController.text;
+    final String password = _passwordController.text;
+
+    final response = await http.post(
+      Uri.parse('https://9af8-120-188-34-126.ngrok-free.app/api/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+
+    // final response = await http.post(
+    //   Uri.parse(
+    //       'https://9af8-120-188-34-126.ngrok-free.app/api/login'), // Ganti dengan URL API Anda
+    //   headers: <String, String>{
+    //     'Content-Type': 'application/json; charset=UTF-8',
+    //   },
+    //   body: jsonEncode(<String, String>{
+    //     'email': email,
+    //     'password': password,
+    //   }),
+    // );
+
+    if (response.statusCode == 200) {
+      // Jika server mengembalikan respons OK, parse JSON
+      //final Map<String, dynamic> data = jsonDecode(response.body);
+      final responseData = jsonDecode(response.body);
+      final String token = responseData['token'];
+
+      // simpan pelogin
+      final String username = responseData['user']['name'];
+      final String userEmail = responseData['user']['email'];
+
+      // Simpan token di SharedPreferences
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('access_token', token);
+      await prefs.setString('username', username); // Simpan nama pengguna
+      await prefs.setString('user_email', userEmail); // Simpan email pengguna
+
+      if (kDebugMode) {
+        print('Login successful: $token');
+        // Arahkan ke layar berikutnya atau lakukan tindakan lain
+      }
+      // Arahkan ke layar berikutnya atau lakukan tindakan lain
+      Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(
+            builder: (context) => const Home(title: 'Tutorial Flutter Pemula')),
+      );
+    } else {
+      // Jika server mengembalikan respons gagal, tampilkan pesan error
+      if (kDebugMode) {
+        print('Login failed: ${response.reasonPhrase}');
+      }
+      showDialog(
+        // ignore: use_build_context_synchronously
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Login Failed'),
+          content: const Text('Please check your credentials and try again.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
